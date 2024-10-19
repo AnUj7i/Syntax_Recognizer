@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programming Language Detector</title>
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .code-area {
+            font-family: monospace;
+            min-height: 200px;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .result-card {
+            margin-top: 20px;
+            padding: 20px;
+        }
+        .language-chip {
+            margin: 10px 0;
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        .confidence {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="blue darken-2">
+        <div class="nav-wrapper container">
+            <a href="#" class="brand-logo">
+                <i class="material-icons left">code</i>
+                Language Detector
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col s12">
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Enter Your Code</span>
+                        <textarea id="codeInput" class="code-area"></textarea>
+                        
+                        <div class="result-card">
+                            <h5>Detected Language:</h5>
+                            <div id="languageResult" class="language-chip">
+                                <div class="chip blue white-text">
+                                    Waiting for input...
+                                </div>
+                            </div>
+                            <div id="confidence" class="confidence"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Examples Section -->
+        <div class="row">
+            <div class="col s12">
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Example Snippets</span>
+                        <div class="collection">
+                            <a href="#!" class="collection-item" onclick="insertExample('python')">Python Example</a>
+                            <a href="#!" class="collection-item" onclick="insertExample('javascript')">JavaScript Example</a>
+                            <a href="#!" class="collection-item" onclick="insertExample('java')">Java Example</a>
+                            <a href="#!" class="collection-item" onclick="insertExample('html')">HTML Example</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Materialize JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeInput = document.getElementById('codeInput');
+            const languageResult = document.getElementById('languageResult');
+            const confidenceDiv = document.getElementById('confidence');
+
+            const languagePatterns = {
+                'Python': {
+                    patterns: [
+                        /def\s+\w+\s*\([^)]*\):/,
+                        /import\s+[\w\s,]+/,
+                        /print\s*\([^)]*\)/,
+                        /^\s*if\s+.*:/m,
+                        /^\s*class\s+\w+:/m
+                    ],
+                    weight: 1.2
+                },
+                'JavaScript': {
+                    patterns: [
+                        /const|let|var\s+\w+\s*=/,
+                        /function\s+\w+\s*\([^)]*\)/,
+                        /console\.log\s*\(/,
+                        /=>/,
+                        /document\.getElementById/
+                    ],
+                    weight: 1.0
+                },
+                'Java': {
+                    patterns: [
+                        /public\s+class\s+\w+/,
+                        /System\.out\.println/,
+                        /public\s+static\s+void\s+main/,
+                        /private|protected|public\s+\w+/
+                    ],
+                    weight: 1.1
+                },
+                'HTML': {
+                    patterns: [
+                        /<(!DOCTYPE|html|head|body|div|p|span)[^>]*>/,
+                        /<\/\w+>/,
+                        /<link\s+rel=/,
+                        /<script[^>]*>/
+                    ],
+                    weight: 0.9
+                }
+            };
+
+            function detectLanguage(code) {
+                if (!code.trim()) {
+                    updateResult('Waiting for input...', '');
+                    return;
+                }
+
+                let scores = {};
+                let maxScore = 0;
+                let detectedLang = 'Unknown';
+
+                for (let [language, config] of Object.entries(languagePatterns)) {
+                    scores[language] = 0;
+                    for (let pattern of config.patterns) {
+                        if (pattern.test(code)) {
+                            scores[language] += config.weight;
+                        }
+                    }
+                    if (scores[language] > maxScore) {
+                        maxScore = scores[language];
+                        detectedLang = language;
+                    }
+                }
+
+                const confidence = maxScore > 0 ? Math.min((maxScore / 3) * 100, 100).toFixed(1) : 0;
+                updateResult(detectedLang, confidence);
+            }
+
+            function updateResult(language, confidence) {
+                languageResult.innerHTML = `
+                    <div class="chip ${language === 'Unknown' ? 'grey' : 'blue'} white-text">
+                        ${language}
+                    </div>`;
+                confidenceDiv.textContent = confidence ? `Confidence: ${confidence}%` : '';
+            }
+
+            codeInput.addEventListener('input', (e) => {
+                detectLanguage(e.target.value);
+            });
+        });
+
+        // Example code snippets
+        const examples = {
+            python: `def calculate_factorial(n):
+    if n == 0:
+        return 1
+    return n * calculate_factorial(n-1)
+
+print(calculate_factorial(5))`,
+            javascript: `const greeting = (name) => {
+    console.log(\`Hello, \${name}!\`);
+}
+
+document.getElementById('button').addEventListener('click', () => {
+    greeting('World');
+});`,
+            java: `public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}`,
+            html: `<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello World</h1>
+    </div>
+</body>
+</html>`
+        };
+
+        function insertExample(language) {
+            document.getElementById('codeInput').value = examples[language];
+            document.getElementById('codeInput').dispatchEvent(new Event('input'));
+        }
+    </script>
+</body>
+</html>
